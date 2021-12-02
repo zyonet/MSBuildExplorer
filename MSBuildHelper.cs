@@ -1,6 +1,9 @@
 ﻿//---------------------------------------------------------------------------------------------------------------------------
 // <copyright file="MSBuildHelper.cs">(c) Mike Fourie. All other rights reserved.</copyright>
 //---------------------------------------------------------------------------------------------------------------------------
+
+using System.Diagnostics;
+
 namespace MSBuildExplorer
 {
     using System.Collections.Generic;
@@ -14,8 +17,22 @@ namespace MSBuildExplorer
     {
         internal static MSBuildFile GetFile(FileInfo file)
         {
-            using (ProjectCollection loadedProjects = new ProjectCollection())
+            using (ProjectCollection loadedProjects = new ProjectCollection(ToolsetDefinitionLocations.Default))
             {
+                //var v15path = @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\MSBuild\15.0\bin";
+                var v15path = @"C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\MSBuild\15.0\Bin";
+                //var current = @"C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin";
+                var current = @"C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\MSBuild\Bin";
+
+                //var vs2022 = @"C:\Program Files (x86)\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin";
+                var vs2022 = @"C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin";
+
+                loadedProjects.AddToolset(new Toolset("15.0", v15path, loadedProjects, v15path));
+                loadedProjects.AddToolset(new Toolset("16.0", current, loadedProjects, current));
+                loadedProjects.AddToolset(new Toolset("17.0", vs2022, loadedProjects, vs2022));
+
+                Debug.WriteLine(loadedProjects.DefaultToolsVersion);
+                var tool14 = loadedProjects.GetToolset("14.0");
                 Project currentProject = loadedProjects.GetLoadedProjects(file.FullName).FirstOrDefault();
 
                 if (currentProject != null)
@@ -47,7 +64,7 @@ namespace MSBuildExplorer
                     m.Imports.Add(new MSBuildImport(import));
                 }
 
-                foreach (var property in currentProject.Properties)
+                foreach (var property in currentProject.AllEvaluatedProperties)
                 {
                     m.Properties.Add(new MSBuildProperties(property));
                 }
